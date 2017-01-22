@@ -1,0 +1,48 @@
+---
+title: "Impact of Weather Phenomena on Human Health and Economic Consequences"
+author: "Shaun"
+date: "January 22, 2017"
+output: html_document
+keep_md: true
+---
+## Synopsis
+
+
+## Data Processing
+
+The Storm Data was obtained from the following link <https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2>. 
+```{r echo = TRUE, warning=FALSE}
+suppressMessages(library(lubridate))
+suppressMessages(library(dplyr))
+suppressMessages(library(stringdist))
+setwd("S:/GitRepository/Reproducible Research - Project 1/Assignment2/ReproducibilityAssignment2")
+
+# Downloading data into a created directory.
+if (!dir.exists("./data/")){
+  dir.create("./data/")
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", destfile = "./data/data.csv.bz2")
+}
+# Reading in the data
+data <- read.csv("./data/data.csv.bz2", header=TRUE)
+data$BGN_DATE <- strptime(data$BGN_DATE, "%m/%d/%Y %H:%M:%S")
+
+eventsummary <- data %>% group_by(EVTYPE) %>% summarise(humanimpact = sum(FATALITIES,INJURIES), economic = sum(PROPDMG,CROPDMG))
+
+```
+
+## Results
+```{r echo = TRUE, warning=FALSE}
+
+```
+
+```{r echo = TRUE, warning=FALSE}
+
+```
+
+```{r echo = TRUE, warning=FALSE}
+
+```
+
+```{r echo = TRUE, warning=FALSE}
+
+```
