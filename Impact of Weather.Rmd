@@ -7,42 +7,137 @@ keep_md: true
 ---
 ## Synopsis
 
+Weather phenomena can be devastating due to the direct impact through fatalities and injuries and secondary effects through the economic impact.
+Understanding the potential impact that certain weather events may cause may inform public policy to deliver adequate resources and actions during those events.
+For the purpose of this report, data from National Oceanic and Atmospheric Administration's (NOAA) storm database, between the years 1950 and 2011, was analysed to determine which weather phenomena has the greatest impact to public health and causes the most damage from an economic viewpoint.
+From the results of this report, we conclude that the weather event with the greatest impact to public health, by a significant proportion, is tornadoes.
+Floods have had the greatest impact on the economy. It is approximately double the impact of hurricane/typhoons which is the next greatest contributor.
 
 ## Data Processing
 
-The Storm Data was obtained from the following link <https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2>. 
-```{r echo = TRUE, warning=FALSE}
-suppressMessages(library(lubridate))
-suppressMessages(library(dplyr))
-suppressMessages(library(stringdist))
+The storm data was obtained from the following link <https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2>.  
+For the purpose of processing the data, the following software was used:  
+* R v3.3.2  
+* RStudio  v1.0.136  
+
+
+### Environment 
+```
+R version 3.3.2 (2016-10-31)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows >= 8 x64 (build 9200)
+
+locale:
+[1] LC_COLLATE=English_United States.1252  LC_CTYPE=English_United States.1252    LC_MONETARY=English_United States.1252 LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.1252    
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] ggplot2_2.2.1 dplyr_0.5.0  
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.8      digest_0.6.11    rprojroot_1.1    assertthat_0.1   plyr_1.8.4       grid_3.3.2       R6_2.2.0         gtable_0.2.0     DBI_0.5-1       
+[10] backports_1.0.4  magrittr_1.5     scales_0.4.1     evaluate_0.10    stringi_1.1.2    lazyeval_0.2.0   rmarkdown_1.3    tools_3.3.2      stringr_1.1.0   
+[19] munsell_0.4.3    yaml_2.1.14      colorspace_1.3-2 htmltools_0.3.5  knitr_1.15.1     tibble_1.2  
+```
+
+### Processing
+```{r echo = TRUE, warning=FALSE, cache=TRUE}
 setwd("S:/GitRepository/Reproducible Research - Project 1/Assignment2/ReproducibilityAssignment2")
 
-# Downloading data into a created directory.
+# Downloading data into a created directory if the directory does not exist.
 if (!dir.exists("./data/")){
   dir.create("./data/")
   download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", destfile = "./data/data.csv.bz2")
 }
-# Reading in the data
-data <- read.csv("./data/data.csv.bz2", header=TRUE)
-data$BGN_DATE <- strptime(data$BGN_DATE, "%m/%d/%Y %H:%M:%S")
+# Reading in the downloaded data
+rawdata <- read.csv("./data/data.csv.bz2", header=TRUE)
+```
 
-eventsummary <- data %>% group_by(EVTYPE) %>% summarise(humanimpact = sum(FATALITIES,INJURIES), economic = sum(PROPDMG,CROPDMG))
+Transformations were made to the 'PROPDMG' and 'CROPDMG' columns based on the values contain within the 'PROPDMGEXP' and 'CROPDMGEXP' columns respectively.  
+This was in order to obtain the absolute magnitude of 'PROPDMG' and 'CROPDMG' for comparisons.
 
+```{r echo = TRUE, warning=FALSE}
+suppressMessages(library(dplyr))
+
+#Substituting in absolute values for property damage
+tempvar <- which(toupper(rawdata$PROPDMGEXP) == "K")
+rawdata[tempvar, "PROPDMG"] <- rawdata[tempvar, "PROPDMG"] * 10^3
+
+tempvar <- which(toupper(rawdata$PROPDMGEXP) == "M")
+rawdata[tempvar, "PROPDMG"] <- rawdata[tempvar, "PROPDMG"] * 10^6
+
+tempvar <- which(toupper(rawdata$PROPDMGEXP) == "B")
+rawdata[tempvar, "PROPDMG"] <- rawdata[tempvar, "PROPDMG"] * 10^9
+
+#Substituting in absolute values for crops
+tempvar <- which(toupper(rawdata$CROPDMGEXP) == "K")
+rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^3
+
+tempvar <- which(toupper(rawdata$CROPDMGEXP) == "M")
+rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^6
+
+tempvar <- which(toupper(rawdata$CROPDMGEXP) == "B")
+rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^9
+
+
+stormevents <- c("Astronomical Low Tide","Avalanche","Blizzard","Coastal Flood","Cold/Wind Chill","Debris Flow","Dense Fog",
+"Dense Smoke","Drought","Dust Devil","Dust Storm","Excessive Heat","Extreme Cold/Wind Chill","Flash Flood",
+"Flood","Frost/Freeze","Funnel Cloud","Freezing Fog","Hail","Heat","Heavy Rain","Heavy Snow","High Surf",
+"High Wind","Hurricane (Typhoon)","Ice Storm","Lake-Effect Snow","Lakeshore Flood","Lightning","Marine Hail",
+"Marine High Wind","Marine Strong Wind","Marine Thunderstorm Wind","Rip Current","Seiche","Sleet","Storm Surge/Tide",
+"Strong Wind","Thunderstorm Wind","Tornado","Tropical Depression","Tropical Storm","Tsunami","Volcanic Ash",
+"Waterspout","Wildfire","Winter Storm","Winter Weather")
+
+uniqueevents <- unique(rawdata$EVTYPE)
+df <- data.frame(uniqueevents)
+colnames(df)<- "events"
+
+#Assing the values from the data into one of the groups defined in the variable stormevents
+for(i in stormevents){
+  df[,make.names(i)] <- 0
+  df[agrep(i, uniqueevents, ignore.case = T, value = F, max.distance = 1), make.names(i)] <- 1
+}
+
+#Row summation to identify which events have been assigned to more than one group
+df$total <- rowSums(df[,make.names(stormevents)])
+
+#Summarise the data by storm type
+eventsummary <- rawdata %>% group_by(EVTYPE) %>% 
+  summarise(fatalities= sum(FATALITIES), injuries = sum(INJURIES), propdmg = sum(PROPDMG), cropdmg = sum(CROPDMG))
+
+#Create additional columns that aggregates fatalities with injuries and property damage with crop damage
+eventsummary$humanimpact <- eventsummary$fatalities + eventsummary$injuries
+eventsummary$economicimpact <- (eventsummary$propdmg + eventsummary$cropdmg)/10^9
+
+#Create new variable based on the decending ordered set of economic data (property and crop damage)
+ordered.economic <- eventsummary[order(eventsummary$economicimpact, decreasing = TRUE),]
+ordered.economic$EVTYPE <- factor(ordered.economic$EVTYPE, levels = ordered.economic$EVTYPE[order(ordered.economic$economicimpact, decreasing = TRUE)])
+
+#Create new variable based on the decending ordered set on human impact data (fatalities and injuries)
+ordered.humanimpact <- eventsummary[order(eventsummary$humanimpact, decreasing = TRUE),]
+ordered.humanimpact$EVTYPE <- factor(ordered.humanimpact$EVTYPE, levels = ordered.humanimpact$EVTYPE[order(ordered.humanimpact$humanimpact, decreasing = TRUE)])
 ```
 
 ## Results
+
 ```{r echo = TRUE, warning=FALSE}
+suppressMessages(library(ggplot2))
+
+ggplot(data = ordered.economic[1:20,], aes(EVTYPE))+
+  geom_bar(aes(x = EVTYPE, y = economicimpact), stat = "identity")+
+  ylab("Economic impact of events (US$ Billion)")+
+  xlab("Storm event")+
+    theme( axis.text.x = element_text(angle=45, hjust=1))
 
 ```
 
 ```{r echo = TRUE, warning=FALSE}
-
-```
-
-```{r echo = TRUE, warning=FALSE}
-
-```
-
-```{r echo = TRUE, warning=FALSE}
-
+ggplot(data = ordered.humanimpact[1:20,], aes(EVTYPE))+
+  geom_bar(aes(x = EVTYPE, y = humanimpact), stat = "identity")+
+  ylab("Combined fatalties and injuries of storm event")+
+  xlab("Storm event")+
+    theme( axis.text.x = element_text(angle=45, hjust=1))
 ```
