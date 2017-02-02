@@ -10,7 +10,7 @@ keep_md: true
 Weather phenomena can be devastating due to the direct impact through fatalities and injuries and secondary effects through the economic impact.
 Understanding the potential impact that certain weather events may cause may inform public policy to deliver adequate resources and actions during those events.
 For the purpose of this report, data from National Oceanic and Atmospheric Administration's (NOAA) storm database, between the years 1950 and 2011, was analysed to determine which weather phenomena has the greatest impact to public health and causes the most damage from an economic viewpoint.
-From the results of this report, we conclude that the weather event with the greatest impact to public health, by a significant proportion, is tornadoes.
+From the results of this report, we conclude that the weather event with the greatest impact to public health, by a significant proportion, is tornados.
 Floods have had the greatest impact on the economy. It is approximately double the impact of hurricane/typhoons which is the next greatest contributor.
 
 ## Data Processing
@@ -83,34 +83,16 @@ rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^9
 ```
 
 
-```{r echo = TRUE, warning=FALSE}
-stormevents <- c("Astronomical Low Tide","Avalanche","Blizzard","Coastal Flood","Cold/Wind Chill","Debris Flow","Dense Fog",
-"Dense Smoke","Drought","Dust Devil","Dust Storm","Excessive Heat","Extreme Cold/Wind Chill","Flash Flood",
-"Flood","Frost/Freeze","Funnel Cloud","Freezing Fog","Hail","Heat","Heavy Rain","Heavy Snow","High Surf",
-"High Wind","Hurricane (Typhoon)","Ice Storm","Lake-Effect Snow","Lakeshore Flood","Lightning","Marine Hail",
-"Marine High Wind","Marine Strong Wind","Marine Thunderstorm Wind","Rip Current","Seiche","Sleet","Storm Surge/Tide",
-"Strong Wind","Thunderstorm Wind","Tornado","Tropical Depression","Tropical Storm","Tsunami","Volcanic Ash",
-"Waterspout","Wildfire","Winter Storm","Winter Weather")
-
-uniqueevents <- unique(rawdata$EVTYPE)
-df <- data.frame(uniqueevents)
-colnames(df)<- "events"
-
-#Assining the values from the data into one of the groups defined in the variable stormevents
-for(i in stormevents){
-  df[,make.names(i)] <- 0
-  df[agrep(i, uniqueevents, ignore.case = T, value = F, max.distance = 1), make.names(i)] <- 1
-}
-
-#Row summation to identify which events have been assigned to more than one group
-df$total <- rowSums(df[,make.names(stormevents)])
-```
+According to the raw dataset, there are `r length(unique(rawdata$EVTYPE))` unique storm event categories. However, this is as a result of inconsistent naming conventions in comparison to the 48 categories identified in Table 2.1.1 'Storm Data Event Table' on page 6 of the document:  <https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf>. For the purpose of this analysis, each category will still be treated separately.
 
 The raw data has been grouped by the storm event type 'EVTYPE' and their values summed up by the categories:  
 * fatalities  
 * injuries  
-* poperty damage  
+* property damage  
 * crop damage  
+
+The total of property and crop damage have been scaled into billions of dollars to visually represent the discrepancy between the storm events.
+
 
 ```{r echo = TRUE, warning=FALSE}
 suppressMessages(library(dplyr))
@@ -146,7 +128,9 @@ ggplot(data = ordered.economic[1:20,], aes(EVTYPE))+
 
 ```
 
+
 As we can see from the graph above, the weather phenomena with the greatest impact to the economy, as determined by property and crop damage, is floods. This is followed by hurricanes/typhoons.
+
 
 ```{r echo = TRUE, warning=FALSE}
 ggplot(data = ordered.humanimpact[1:20,], aes(EVTYPE))+
@@ -157,4 +141,5 @@ ggplot(data = ordered.humanimpact[1:20,], aes(EVTYPE))+
     theme( axis.text.x = element_text(angle=45, hjust=1))
 ```
 
-The graph above represents the number of human casualties sustained by weather phenomena. Tornadoes have have the greatest impact to human wellbeing, by a significant margin, as determined by the number of fatalities and injuries sustained during tornado events.
+
+The graph above represents the number of human casualties sustained by weather phenomena. Tornados have the greatest impact to human wellbeing, by a significant margin, as determined by the number of fatalities and injuries sustained during tornado events.
