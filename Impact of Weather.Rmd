@@ -1,7 +1,7 @@
 ---
-title: "Impact of Weather Phenomena on Human Health and Economic Consequences"
+title: "Impact of Weather Phenomena on Human Health and Economy"
 author: "Shaun"
-date: "January 22, 2017"
+date: "February 1, 2017"
 output: html_document
 keep_md: true
 ---
@@ -15,11 +15,9 @@ Floods have had the greatest impact on the economy. It is approximately double t
 
 ## Data Processing
 
-The storm data was obtained from the following link <https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2>.  
 For the purpose of processing the data, the following software was used:  
 * R v3.3.2  
 * RStudio  v1.0.136  
-
 
 ### Environment 
 ```
@@ -44,8 +42,11 @@ loaded via a namespace (and not attached):
 ```
 
 ### Processing
+
+The storm data was obtained from the following link <https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2>.
+
 ```{r echo = TRUE, warning=FALSE, cache=TRUE}
-setwd("S:/GitRepository/Reproducible Research - Project 1/Assignment2/ReproducibilityAssignment2")
+setwd("C:/Repository/shaun/ReproducibilityAssignment2-master")
 
 # Downloading data into a created directory if the directory does not exist.
 if (!dir.exists("./data/")){
@@ -60,8 +61,6 @@ Transformations were made to the 'PROPDMG' and 'CROPDMG' columns based on the va
 This was in order to obtain the absolute magnitude of 'PROPDMG' and 'CROPDMG' for comparisons.
 
 ```{r echo = TRUE, warning=FALSE}
-suppressMessages(library(dplyr))
-
 #Substituting in absolute values for property damage
 tempvar <- which(toupper(rawdata$PROPDMGEXP) == "K")
 rawdata[tempvar, "PROPDMG"] <- rawdata[tempvar, "PROPDMG"] * 10^3
@@ -72,7 +71,7 @@ rawdata[tempvar, "PROPDMG"] <- rawdata[tempvar, "PROPDMG"] * 10^6
 tempvar <- which(toupper(rawdata$PROPDMGEXP) == "B")
 rawdata[tempvar, "PROPDMG"] <- rawdata[tempvar, "PROPDMG"] * 10^9
 
-#Substituting in absolute values for crops
+#Substituting in absolute values for crop damage
 tempvar <- which(toupper(rawdata$CROPDMGEXP) == "K")
 rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^3
 
@@ -81,8 +80,10 @@ rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^6
 
 tempvar <- which(toupper(rawdata$CROPDMGEXP) == "B")
 rawdata[tempvar, "CROPDMG"] <- rawdata[tempvar, "CROPDMG"] * 10^9
+```
 
 
+```{r echo = TRUE, warning=FALSE}
 stormevents <- c("Astronomical Low Tide","Avalanche","Blizzard","Coastal Flood","Cold/Wind Chill","Debris Flow","Dense Fog",
 "Dense Smoke","Drought","Dust Devil","Dust Storm","Excessive Heat","Extreme Cold/Wind Chill","Flash Flood",
 "Flood","Frost/Freeze","Funnel Cloud","Freezing Fog","Hail","Heat","Heavy Rain","Heavy Snow","High Surf",
@@ -95,7 +96,7 @@ uniqueevents <- unique(rawdata$EVTYPE)
 df <- data.frame(uniqueevents)
 colnames(df)<- "events"
 
-#Assing the values from the data into one of the groups defined in the variable stormevents
+#Assining the values from the data into one of the groups defined in the variable stormevents
 for(i in stormevents){
   df[,make.names(i)] <- 0
   df[agrep(i, uniqueevents, ignore.case = T, value = F, max.distance = 1), make.names(i)] <- 1
@@ -103,6 +104,16 @@ for(i in stormevents){
 
 #Row summation to identify which events have been assigned to more than one group
 df$total <- rowSums(df[,make.names(stormevents)])
+```
+
+The raw data has been grouped by the storm event type 'EVTYPE' and their values summed up by the categories:  
+* fatalities  
+* injuries  
+* poperty damage  
+* crop damage  
+
+```{r echo = TRUE, warning=FALSE}
+suppressMessages(library(dplyr))
 
 #Summarise the data by storm type
 eventsummary <- rawdata %>% group_by(EVTYPE) %>% 
@@ -127,17 +138,23 @@ ordered.humanimpact$EVTYPE <- factor(ordered.humanimpact$EVTYPE, levels = ordere
 suppressMessages(library(ggplot2))
 
 ggplot(data = ordered.economic[1:20,], aes(EVTYPE))+
-  geom_bar(aes(x = EVTYPE, y = economicimpact), stat = "identity")+
-  ylab("Economic impact of events (US$ Billion)")+
+  geom_bar(aes(x = EVTYPE, y = economicimpact), stat = "identity", fill="blue")+
+  ggtitle("Economic impact of weather phenomena")+
+  ylab("US$ Billion")+
   xlab("Storm event")+
     theme( axis.text.x = element_text(angle=45, hjust=1))
 
 ```
+
+As we can see from the graph above, the weather phenomena with the greatest impact to the economy, as determined by property and crop damage, is floods. This is followed by hurricanes/typhoons.
 
 ```{r echo = TRUE, warning=FALSE}
 ggplot(data = ordered.humanimpact[1:20,], aes(EVTYPE))+
-  geom_bar(aes(x = EVTYPE, y = humanimpact), stat = "identity")+
-  ylab("Combined fatalties and injuries of storm event")+
+  geom_bar(aes(x = EVTYPE, y = humanimpact), stat = "identity", fill="blue")+
+  ggtitle("Combined fatalties and injuries of weather phenomena")+
+  ylab("Casualties")+
   xlab("Storm event")+
     theme( axis.text.x = element_text(angle=45, hjust=1))
 ```
+
+The graph above represents the number of human casualties sustained by weather phenomena. Tornadoes have have the greatest impact to human wellbeing, by a significant margin, as determined by the number of fatalities and injuries sustained during tornado events.
